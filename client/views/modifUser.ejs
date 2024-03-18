@@ -1,0 +1,38 @@
+<%- include('navbar') %>
+<section class="container">
+
+<div class="row mt-5">
+    <div class="col-md-6 m-auto">
+        <div class="card card-body text-center">
+            <h1 class="mb-3">
+                <img src="/assets/secure-icon.png" alt="icon" width="20%" />
+            </h1>
+            <h2>
+                Modifier les infos du compte
+            </h2>
+            <form action="/modifUser" method="POST">
+                <div class="form-group">
+                    <label for="nom">Nom</label>
+                    <input type="nom" id="nom" name="nom" class="form-control" placeholder="Entrez votre Nom" value="<%= nom %>"/>
+                </div>
+                <div class="form-group">
+                    <label for="prenom">Prénom</label>
+                    <input type="prenom" id="prenom" name="prenom" class="form-control" placeholder="Entrez votre Prénom" value="<%= prenom %>"/>
+                </div>
+                <div class="form-group">
+                    <h3>Adresse</h3>
+                    <label for="rue">Rue</label>
+                    <input type="rue" id="rue" name="rue" class="form-control" placeholder="Entrez votre rue" value="<%= adresse.rue %>"/>
+                    <label for="numero">Numéro</label>
+                    <input type="numero" id="numero" name="numero" class="form-control" placeholder="Entrez votre numéro de rue" value="<%= adresse.numero %>"/>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" class="form-control" placeholder="Entrez votre Email" value="<%= email %>"/>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Modifier</button>
+            </form>
+        </div>
+    </div>
+</div>
+</section>

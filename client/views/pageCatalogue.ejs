@@ -1,0 +1,291 @@
+<%- include('navbar') %>
+<link href="../assets/css/pageCatalogue.css" rel="stylesheet">
+
+<section class="container">
+  
+    <form>
+      <div class="input-group mb-3">
+        <select class="form-select" style="max-width: 6em;" name="Trier" id="livresTri">
+          <option value="titre asc">Titre &#8595</option>
+          <option value="titre desc">Titre &#8593</option>
+          <option value="auteur asc">Auteur &#8595</option>
+          <option value="auteur desc">Auteur &#8593</option>
+          <option value="dateAdded asc">Nouveautés</option>
+          <option value="dateAdded desc">Les plus anciens</option>
+        </select>
+        <input type="text" class="form-control" id="searchInput" placeholder="Rechercher un livre">    
+
+      <select class="form-select" name="categorieFilter" id="categorieFilter">
+        <option value="Tous">Tous</option>
+      </select>
+      <label class="input-group-text">
+        <input class="form-check-input mt-0" type="checkbox" id="disponiblesCheckbox">
+        Disponibles</label>
+      </div>
+  
+    </form>
+    <%- include ("./messages") %>
+
+    <article id="book_container" class="card-container">
+
+    </article>
+</section>
+
+
+<script>
+  
+let livres;
+let auteurs;
+let editeurs;
+
+//------- écouteur au chargement de la page --------//
+
+document.addEventListener('DOMContentLoaded', async function () {
+  livres = await loadLivres();
+  editeurs = await loadEditeurs();
+  auteurs = await loadAuteurs();
+  livres = mettreAJourLivres(livres);
+  await afficherLivres();
+  creerOptionsSelect(subcategories);
+});
+//-------- récupération des livres depuis le serveur --------//
+
+async function loadLivres() {
+  try {
+    const response = await axios.get('/api/data/livres');  
+    livres = response.data;
+    return livres
+  } catch (error) {
+    console.error('Erreur lors de la récupération des données', error);
+  }
+}
+
+async function afficherLivres() {
+  mettreAJourAffichage(livres)
+};
+
+function mettreAJourLivres(livres) {
+  livres = livres.map(livre => {
+    const auteursNoms = livre.auteur.map(id => {
+      const auteur = auteurs.find(auteur => auteur._id === id);
+      return auteur ? {id: auteur._id, prenom: auteur.prenom, nom: auteur.nom } : 'Auteur inconnu';
+    });
+    livre.auteur = auteursNoms.length > 0 ? auteursNoms : 'Auteur inconnu';
+
+    // Remplacer l'ID de l'éditeur par le nom correspondant
+    const editeur = editeurs.find(editeur => editeur._id === livre.editeur);
+    livre.editeur = editeur ? {id: editeur._id, nom: editeur.nom } : 'Éditeur inconnu';
+
+    return livre;
+  });
+
+  return livres
+}
+
+async function loadAuteurs() {
+  try {
+    const response = await axios.get('/api/data/auteurs');  
+    auteurs = response.data;
+    return auteurs
+  } catch (error) {
+    console.error('Erreur lors de la récupération des données', error);
+  }
+}
+
+async function loadEditeurs() {
+  try {
+    const response = await axios.get('/api/data/editeurs');  
+    editeurs = response.data;
+    return editeurs
+  } catch (error) {
+    console.error('Erreur lors de la récupération des données', error);
+  }
+}
+
+//-------- fonction pour ajouter les catégories et sous catégorie a la liste des filtres --------//
+
+function creerOptionsSelect(categories) {
+  const select = $('#categorieFilter');
+  for (const categorie in categories) {
+      const optgroup = $('<optgroup>').attr('label', categorie);
+      categories[categorie].forEach(sousCategorie => {
+          optgroup.append($('<option>').text(sousCategorie).val(sousCategorie));
+      });
+      select.append(optgroup);
+  }
+}
+
+//-------- fonction de tri --------//
+
+//écouteur pour lancer la fonction tri 
+$('#livresTri').change(async function () {
+  currentPage = 1
+  const selectedValue = $(this).val();
+  const [champ, ordre] = selectedValue.split(' ');
+  livres = trierLivres(livres, champ, ordre);
+  mettreAJourAffichage(livres);
+});
+
+//fonction permettant de trier par ordre croissant ou décroissant selon le paramètre sélectionné
+function trierLivres(data, champ, ordre) {
+  return data.sort((a, b) => {
+    const auteurA = a.auteur[0].nom;
+    const auteurB = b.auteur[0].nom;
+    if (ordre === 'asc') {
+      return auteurA.localeCompare(auteurB);
+    } else if (ordre === 'desc') {
+      return auteurB.localeCompare(auteurA);
+    }
+  });
+}
+
+//-------- chemin vers page info livre --------//
+
+function ouvrirPageInfoLivre(livre, concatId) {
+  localStorage.setItem('livreDetails', JSON.stringify(livre));
+  window.location.href = `/livre/${concatId}`;
+}
+
+//-------- affichage des livres sur la page --------//
+
+let currentPage = 1;
+const itemsPerPage = 10;
+let filtre = 'Tous'
+
+function mettreAJourAffichage(livres) {
+  const listeUl = $('#book_container');
+  if (currentPage === 1) {
+    listeUl.empty();
+  }
+  console.log(currentPage)
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = currentPage * itemsPerPage;
+  let booksFiltered = filtrerLivresParSousCategorie(livres, filtre)
+  if (filtre === 'Tous') {
+    booksFiltered = livres
+  }
+  const booksToDisplay = booksFiltered.slice(startIndex, endIndex);
+
+  
+  booksToDisplay.forEach(book => {
+    let concatId = book._id.titre.toString() + '_' + book._id.auteur.toString() + '_' + book._id.editeur.toString();
+    concatId = concatId.replace(/ /g, "#");
+    const aElement = $('<a>').on('click', function (event) {
+      event.preventDefault();
+      ouvrirPageInfoLivre(book, concatId);
+    });
+    let livreElement = `
+    <div id="${concatId}" class="card mb-3 searchItem" style="max-width: 540px;">
+      <div class="row g-0">
+        <div class="col-md-4">
+          <img src="${book.couverture}" class="img-fluid rounded-start" alt="...">
+        </div>
+        <div class="col-md-8">
+          <div class="card-body">
+            <h3 class="card-title">${book.titre}</h5>`;
+    let authorsString = '<h5 class="text-danger">'
+      book.auteur.forEach((author, index) => {
+        authorsString += `${author.prenom} ${author.nom}`;
+        // Ajouter une virgule si ce n'est pas le dernier auteur
+        if (index < book.auteur.length - 1) {
+          authorsString += ', ';
+        }
+      });
+      authorsString += '</h5>'
+      livreElement += authorsString;
+    let description = book.description.length > 50 ? book.description.substring(0, 150) + "..." : book.description;
+
+    livreElement +=`
+            <p class="card-text">${description}</p>
+            <p class="card-text"><small class="text-body-secondary">Exemplaires disponibles : ${book.exemplairesDisponibles}</small></p>
+          </div>
+        </div>
+      </div>
+    </div>
+    `;
+    aElement.append(livreElement);
+    listeUl.append(aElement)
+
+  });
+};
+
+window.addEventListener('scroll', () => {
+  if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
+    // Vous êtes arrivé en bas de la page, chargez plus de données
+    currentPage++;
+    mettreAJourAffichage(livres);
+  }
+});
+
+//-------- filtre par catégorie --------//
+
+//écoute le select pour lancer la fonction : filtrerLivresParSousCategorie(livres, sousCategorie)
+$('#categorieFilter').change(function () {
+  currentPage = 1
+  const selectedSubcategory = $(this).val();
+  if (selectedSubcategory === 'Tous') {
+    filtre = 'Tous'
+    mettreAJourAffichage(livres);
+  } else {
+    filtre = selectedSubcategory;
+    mettreAJourAffichage(livres)
+  }
+});
+
+//fonction de filtre par catégorie
+function filtrerLivresParSousCategorie(livres, sousCategorie) {
+  return livres.filter(book => book.sous_categorie === sousCategorie);
+}
+
+//-------- filtre par livre dispo --------//
+
+//écoute le checkbox pour déclancher la fonction : filtrerLivresParDisponibilite(livres, disponiblesSeulement)
+$('#disponiblesCheckbox').change(function () {
+  currentPage = 1
+  const isChecked = $(this).prop('checked');
+  if (isChecked) {
+      const livresDisponibles = filtrerLivresParDisponibilite(livres, true);
+      mettreAJourAffichage(livresDisponibles);
+  } else {
+      mettreAJourAffichage(livres);
+  }
+});
+
+//fonction de filtre par disponibilité
+function filtrerLivresParDisponibilite(livres, disponiblesSeulement) {
+  return livres.filter(book => {
+      if (disponiblesSeulement) {
+          return book.exemplairesDisponibles > 0;
+      } else {
+          return true;
+      }
+  });
+}
+
+//-------- Barre de Recherche --------//
+
+
+let input = document.getElementById("searchInput");
+let list = document.getElementById("liste");
+let items = document.getElementsByClassName("searchItem");
+
+
+input.addEventListener("input", function() {
+  let searchText = this.value.toLowerCase();
+  currentPage = 1
+
+  // Filtrer les livres en fonction du texte saisi
+  let filteredLivres = livres.filter(book => {
+    let auteurs = book.auteur.map(a => `${a.prenom} ${a.nom}`).join(' ');
+
+    return book.titre.toLowerCase().includes(searchText) ||
+           book.auteur.toString().toLowerCase().includes(searchText) ||
+           auteurs.toLowerCase().includes(searchText) ||
+           book.date_parution.toString().toLowerCase().includes(searchText) ||
+           book.tag.toString().toLowerCase().includes(searchText)
+  });
+
+  // Mettre à jour l'affichage avec les livres filtrés
+  mettreAJourAffichage(filteredLivres);
+});
+</script>

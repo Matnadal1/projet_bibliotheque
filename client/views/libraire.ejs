@@ -1,0 +1,51 @@
+<%- include('navbar') %>
+<link href="../assets/css/compte.css" rel="stylesheet">
+
+<section class="container">
+<div class="text-center">    
+  <%- include ("./messages") %>
+</div>
+
+
+<div class="row mt-5">
+  <aside class="col-md-3 text-center" id="infoLibraire">
+    <div class="card card-body">
+      <div>
+        <h2>Infos du compte</h2>
+        <p>Nom : <%= nom %></p>
+        <p>Prénom : <%= prenom %></p>
+        <p>Adresse : <%= adresse %></p>
+        <p>Email : <%= email %></p>
+        <a class="btn btn-light" href="/modifUser">Modifier</a>
+        <a class="btn btn-light" href="/auth/logout">Déconnection</a>  
+      </div>
+    </div>
+  </aside>
+  <main class="col-md-6" id="empruntsReservations">
+    <div class="card card-body">
+      <h2 class="text-center">Prêt en cours :</h2>
+      <div class="list-group" id="emprunts">
+      </div>
+    <br>
+      <h2 class="text-center">Réservations : </h2>
+      <div class="list-group" id="reservations">
+      </div>
+    </div>
+  </main>
+  <aside class="col-md-3  text-center" id="commandesLibraire">
+    <div class="card card-body">
+      <h2>Commandes Libraire</h2>
+      <a class="btn btn-light" href="/creerPret">Crée prêt</a>
+      <a class="btn btn-light" href="/gererPret">Gérer prêt</a>
+      <a class="btn btn-light" href="/ajouter">Ajouter Livre/Auteur/Editeur</a>
+      <a class="btn btn-light" href="/empruntsXLSX" id="mon-lien">Format XLSX</a>
+
+    </div>
+  </aside>
+</div>
+</section>
+<script src="../assets/js/afficherEmprunts.js"></script>
+
+<script>
+const userId = '<%= id %>'
+</script>

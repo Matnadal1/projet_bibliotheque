@@ -1,0 +1,224 @@
+<%- include('navbar') %>
+<link href="../assets/css/compte.css" rel="stylesheet">
+
+<section class="container">
+
+<div>
+    <%- include ("./messages") %>
+    <!-- Sélecteur pour choisir le formulaire à afficher -->
+    <select class="form-control text-center" id="select-form" onchange="toggleForm()">
+        <option value="ajouter-livre">Ajouter un Livre</option>
+        <option value="ajouter-auteur">Ajouter un Auteur</option>
+        <option value="ajouter-editeur">Ajouter un Éditeur</option>
+        <option value="ajouter-csv" disabled>Ajouter un Fichier CSV (work in progress..)</option>
+    </select>
+    <div class="row mt-5">
+        <div class="col-md-6 m-auto">
+            <div class="card card-body text-center">
+
+
+
+    
+    <!-- Divs contenant les formulaires -->
+    <div id="ajouter-livre-form" class="formulaire">
+        <h2>Ajouter un Livre</h2>
+        <form id="ajouter-livre-form" action="/ajouterLivre" method="POST" enctype="multipart/form-data">
+
+            <div class="input-group mb-3">
+                <span class="input-group-text" id="titre-label">Titre :</span>
+                <input class="form-control" type="text" id="titre" name="titre" placeholder="Entrez le titre du Livre" required>
+            </div>
+
+            <div class="input-group mb-3">
+                <span class="input-group-text" id="auteur-label">Auteur :</span>
+                <select class="form-control" name="auteur" id="auteur" placeholder="Sélectionner un/des auteur(es)"></select>            
+            </div>
+
+            <div class="input-group mb-3">
+                <span class="input-group-text" id="editeur-label">Editeur :</span>
+                <select class="form-control" name="editeur" id="editeur" placeholder="Sélectionner un editeur"></select>            
+            </div>
+
+            <div class="input-group mb-3">
+                <span class="input-group-text" id="date_parution-label">Date de parution :</span>
+                <input class="form-control" type="text" id="date_parution" name="date_parution" placeholder="Sélectionner Date de parution" required><br>
+            </div>
+
+            <select class="form-control" name="categorieFilter" id="categorieFilter">
+                <option value="null">Sélectionner une catégorie</option>
+            </select><br>
+
+            <div class="input-group mb-3">
+                <span class="input-group-text" id="input-tags-label">Tags :</span>
+                <input class="form-control" type="text" id="input-tags" name="input-tags" placeholder="Ajouter des tags personnalisés"><br>
+            </div>
+
+            <div class="input-group">
+                <span class="input-group-text">Description :</span>
+                <textarea class="form-control" aria-label="Entrez la description du Livre" id="description" name="description"></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="formFile" class="form-label">Couverture du livre :</label>
+                <input class="form-control" type="file" id="formFile" name="imageLivre">            
+            </div>
+
+            <div class="input-group">
+                <span class="input-group-text">ISBN(s) :</span>
+                <textarea id="ISBN" class="form-control" aria-label="Entrez le ou les du Livre" id="description" name="ISBN" placeholder="Ajouter un ou plusieurs ISBN séparé par une virgule : ','"></textarea>
+            </div>
+            
+            <button class="btn btn-primary" type="submit" id="bouton-ajout-livre">Ajouter un livre</button>
+        </form>
+    </div>
+
+    <div id="ajouter-auteur-form" class="formulaire">
+        <h2>Ajouter un Auteur</h2>
+        <form id="ajout-auteur-form" action="/ajouterAuteur" method="POST">
+
+            <div class="input-group mb-3">
+                <span class="input-group-text" id="prenom-label">Prénom :</span>
+                <input class="form-control" type="text" id="prenom-auteur" name="prenom-auteur" placeholder="Entrez le prénom de l'auteur" required>
+            </div>
+
+            <div class="input-group mb-3">
+                <span class="input-group-text" id="nom-label">Nom :</span>
+                <input class="form-control" type="text" id="nom-auteur" name="nom-auteur" placeholder="Entrez le nom de l'auteur" required>
+            </div>
+
+            <div class="input-group mb-3">
+                <span class="input-group-text" id="description-label">Description :</span>
+                <input class="form-control" type="text" id="description" name="description" placeholder="Entrez la description de l'auteur" required>
+            </div>
+            
+            <button class="btn btn-primary" type="submit" id="bouton-ajouter-auteur">Ajouter un auteur</button>
+        </form>
+    </div>
+
+    <div id="ajouter-editeur-form" class="formulaire">
+        <h2>Ajouter un Éditeur</h2>
+        
+        <form id="ajout-editeur-form" action="/ajouterEditeur" method="POST">
+
+            <div class="input-group mb-3">
+                <span class="input-group-text" id="nom-label">Nom :</span>
+                <input class="form-control" type="text" id="nom-editeur" name="nom-editeur" placeholder="Entrez le nom de l'éditeur" required>
+            </div>
+
+            <div class="input-group mb-3">
+                <span class="input-group-text" id="description-label">Description :</span>
+                <input class="form-control" type="text" id="description" name="description" placeholder="Entrez la description de l'éditeur" required>
+            </div>
+
+            <button class="btn btn-primary" type="submit" id="bouton-ajouter-editeur">Ajouter un éditeur</button>
+        </form>
+    </div>
+
+    <div id="ajouter-csv-form" class="formulaire">
+        <h2>Ajouter un Fichier CSV</h2>
+        <form id="ajout-csv-form" onsubmit="return validateForm('ajout-csv-form')" action="/ajouter-csv" method="POST" enctype="multipart/form-data">
+            <!-- Champ pour le fichier CSV -->
+            <label for="fichier-csv">Fichier CSV:</label>
+            <input type="file" id="fichier-csv" name="fichierCSV" accept=".csv" required><br>
+            <!-- Bouton de soumission -->
+            <button class="btn btn-primary" type="submit" id="bouton-ajout-csv">Ajouter un fichier CSV</button>
+        </form>
+    </div>
+    </div>
+    </div>
+    </div>
+
+</div>
+</section>
+<script>
+
+let auteurs;
+let editeurs;
+
+$('#auteur').selectize({
+    maxItems: null,
+    valueField: 'id',
+    labelField: 'title',
+    searchField: 'title',
+    option: auteurs,
+    create: false
+});
+
+$('#editeur').selectize({
+    maxItems: 1,
+    valueField: 'id',
+    labelField: 'title',
+    searchField: 'title',
+    option: editeurs,
+    create: false
+});
+
+$("#input-tags").selectize({
+    delimiter: ",",
+    persist: false,
+    create: function (input) {
+      return {
+          value: input,
+          text: input,
+      };
+    },
+  });
+
+async function loadAuteurs() {
+    try {
+      const response = await axios.get('/api/data/auteurs');  
+      auteurs = response.data;
+      return auteurs
+    } catch (error) {
+      console.error('Erreur lors de la récupération des données', error);
+    }
+}
+
+async function loadEditeurs() {
+    try {
+      const response = await axios.get('/api/data/editeurs');  
+      editeurs = response.data;
+      return editeurs
+    } catch (error) {
+      console.error('Erreur lors de la récupération des données', error);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', async function () {
+    creerOptionsSelect(subcategories);
+    auteurs = await loadAuteurs();
+    editeurs = await loadEditeurs();
+    const auteursSelectize = $('#auteur')[0].selectize;
+    auteurs.forEach((auteur) => {
+        auteursSelectize.addOption({
+            id: auteur._id,
+            title: auteur.prenom + ' ' + auteur.nom 
+        });
+    });
+    auteursSelectize.refreshOptions();
+    const editeursSelectize = $('#editeur')[0].selectize;
+    editeurs.forEach((editeur) => {
+        editeursSelectize.addOption({
+            id: editeur._id,
+            title: editeur.nom
+        });
+    });
+    editeursSelectize.refreshOptions();
+    
+});
+
+  function toggleForm() {
+      // Récupérez la valeur sélectionnée dans le sélecteur
+      const selectedForm = document.getElementById('select-form').value;
+      // Masquez tous les formulaires
+      const forms = document.querySelectorAll('.formulaire');
+      forms.forEach((form) => {
+          form.style.display = 'none';
+      });
+      // Affichez le formulaire sélectionné
+      document.getElementById(selectedForm + '-form').style.display = 'block';
+  }
+  // Appelez toggleForm() pour afficher le formulaire initial sélectionné
+  toggleForm();
+</script>
+

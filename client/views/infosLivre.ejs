@@ -1,0 +1,77 @@
+<%- include('navbar') %>
+<link href="../assets/css/livreInfos.css" rel="stylesheet">
+
+<section class="container">
+  <%- include ("./messages") %>
+
+    <main>
+        <div class="card mb-3" id="livreInfos">
+
+        </div>
+    </main>
+
+</section>
+
+<script>
+    
+let livreDetails
+document.addEventListener('DOMContentLoaded', async function () {
+    livreDetails = JSON.parse(localStorage.getItem('livreDetails'));
+    console.log(livreDetails)
+    mettreAJourAffichage(livreDetails)
+});
+
+function mettreAJourAffichage(book) {
+    const livreInfos = $('#livreInfos');
+    let auteurs= "";
+    book.auteur.forEach((author, index) => {
+      auteurs += `${author.id}`;
+        // Ajouter une virgule si ce n'est pas le dernier auteur
+        if (index < book.auteur.length - 1) {
+          auteurs += ';';
+        }
+    });
+    livreInfos.empty();
+    console.log(auteurs)
+    // auteurs
+
+    let authorsString = '<h3 class="text-danger">'
+      book.auteur.forEach((author, index) => {
+          authorsString += `${author.prenom} ${author.nom}`;
+          if (index < book.auteur.length - 1) {
+            authorsString += ', ';
+          }
+        });
+      authorsString += '</h3>'
+
+      // affichage livre
+
+    livreInfos.append(`
+    <div class="row g-0">
+      <div class="col-md-4">
+        <img src="${book.couverture}" class="card-img-top" alt="...">
+      </div>
+      <div class="col-md-8">
+        <div class="card-body" id="book_container">
+          <div class="d-flex w-100 justify-content-between">
+            <h1 class="card-title">${book.titre}</h1>
+            <p>Exemplaires disponibles : ${book.exemplairesDisponibles}</p>
+
+          </div>
+          ${authorsString}
+          <a>Editeur : ${book.editeur.nom}</a>
+          <p class="bold">${book.sous_categorie}</p>
+          <p>${book.description}</p>
+          <form action="/reserver/${book.titre}/${auteurs}/${book.editeur.id}" method="post">
+            <button class="btn btn-primary" type="submit">Réserver</button>
+          </form> 
+        </div>
+      </div>
+    </div>
+    <div class="text-right card-footer">
+      Exemplaires disponibles : ${book.exemplairesDisponibles}    
+    </div>
+    `);
+};
+
+</script>

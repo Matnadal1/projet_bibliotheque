@@ -1,0 +1,90 @@
+<%- include('navbar') %>
+<section class="container">
+    <link href="../assets/css/compte.css" rel="stylesheet">
+<div class="text-center">   
+     <%- include ("./messages") %>
+</div>
+
+<div class="row mt-5">       
+     
+
+    <h1 class="text-center">Liste des emprunts :</h1>
+    <input type="text" class="col-md-6 m-auto form-control" id="searchInput" placeholder="Rechercher un emprunt">    
+
+    <main class="col-md-6 m-auto" id="empruntsReservations">
+        <div class="card card-body">
+            <section id="livresEmpruntes">
+                    
+            </section>     
+        </div>
+    </main>
+</div>
+</section>
+<script src="../assets/js/searchBar.js"></script>
+
+<script>
+let users;
+
+    document.addEventListener('DOMContentLoaded', async function () {
+        users = await loadEmprunts();
+        await mettreAJourAffichage(users);
+    });
+
+    async function loadEmprunts() {
+        try {
+            const response = await axios.get('/api/data/empruntsDetailsUser');  
+            users = response.data;
+            console.log(users);
+            return users
+        } catch (error) {
+            console.error('Erreur lors de la récupération des données', error);
+        }
+    }
+
+    function mettreAJourAffichage(users) {
+        const livresEmpruntes = $('#livresEmpruntes');
+        livresEmpruntes.empty();
+        users.forEach(user => {
+            const userElement = $(`<div id=${user.user.email} class="list-group">`)
+            userElement.append(`<h4 class="text-center">Emprunt(s) de ${user.user.nom} ${user.user.prenom} : <br></h4>`)
+            
+            user.emprunts.forEach(emprunt => {
+                if (emprunt.etat != 'archivé') {
+
+
+                livresEmpruntes.append(userElement);
+
+                const retour = new Date(emprunt.createdAt);
+                retour.setDate(retour.getDate() + 30);
+                const retourFormatted = `${retour.getDate()}/${retour.getMonth() + 1}/${retour.getFullYear()}`;
+                let authorsString = '<p class="text-danger">'
+                const rendre = emprunt.etat == "en retard" ? '<small>En retard !</small>' : `<small>A rendre avant le : ${retourFormatted}</small>`
+                emprunt.auteurs.forEach((author, index) => {
+                  authorsString += `ISBN : ${emprunt.isbn}`;
+                  // Ajouter une virgule si ce n'est pas le dernier auteur
+                  if (index < emprunt.auteurs.length - 1) {
+                    authorsString += ', ';
+                  }
+                });
+                authorsString += '</p>'
+                userElement.append(`
+                  <div class="list-group-item searchItem ${emprunt.etat == "en retard" ? 'list-group-item-danger' : ''}" class="list-group-item">
+                    <div class="d-flex w-100 justify-content-between">
+                      <h5 class="mb-1">${emprunt.titre}</h5>
+                      <form action="/rendrePret" method="POST" style="display: inline;">
+                        <button type="submit" class="btn btn-light">Rendre</button>
+                        <input type="hidden" name="bookId" value="${emprunt.isbn}">
+                    </form>
+                    </div>
+                    ${authorsString}
+                    ${rendre}
+                  </div>
+                `);
+                }
+            }) 
+
+        });     
+            
+    };
+
+</script>

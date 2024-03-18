@@ -1,0 +1,214 @@
+<%- include('navbar') %>
+<link href="../assets/css/compte.css" rel="stylesheet">
+
+<section class="container">
+
+<div class="row mt-5">
+  <div class="col-md-6 m-auto">
+      <div class="card card-body text-center">
+
+          <h2>
+              Créer Prêt
+          </h2>
+          <%- include ("./messages") %>
+          <form action="/creerPret" method="POST">
+            <div class="form-group">
+              <div class="input-group mb-3">
+                  <span class="input-group-text" id="editeur-label">Utilisateur :</span>
+                  <select class="form-control" name="user" id="user" placeholder="Entrez un utilisateur" required></select>   
+              </div>         
+            </div>
+            <div class="form-group">
+              <div class="input-group mb-3">
+                <span class="input-group-text" id="auteur-label">Livre(s) :</span>
+                <select class="form-control" name="livre" id="livre" placeholder="Entrez un ou plusieurs livres" required></select>            
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block"> Crée prêt </button>
+          </form>
+
+
+      </div>
+  </div>
+</div>
+</section>
+
+<script>
+
+  let livres;
+  let users;
+  let emprunts;
+
+
+$('#livre').selectize({
+    maxItems: 5,
+    valueField: 'id',
+    labelField: 'title',
+    searchField: 'title',
+    option: livres,
+    render: {
+      item: function(item, escape) {
+          return '<div>' +
+              '<span class="titre">' + escape(item.titre) + '</span><br>' + // Affiche le nom complet
+              '<span class="auteur">' + escape(item.auteur) + '</span>' + // Affiche l'email en dessous
+          '</div>';
+      },
+      option: function(item, escape) {
+          return '<div>' +
+              '<span class="titre">' + escape(item.titre) + '</span><br>' +
+              '<span class="auteur">' + escape(item.auteur) + '</span><br>' +
+              '<span class="editeur">' + escape(item.editeur) + '</span>' +
+          '</div>';
+      }
+    },
+    create: false,
+    disabled: true 
+});
+
+$('#user').selectize({
+    maxItems: 1,
+    valueField: 'id',
+    labelField: 'title',
+    searchField: ['title', 'email'], // Ajoutez 'email' au champ de recherche
+    option: users,
+    render: {
+      item: function(item, escape) {
+          return '<div>' +
+              '<span class="name">' + escape(item.title) + '</span><br>' + // Affiche le nom complet
+              '<span class="email">' + escape(item.email) + '</span>' + // Affiche l'email en dessous
+          '</div>';
+      },
+      option: function(item, escape) {
+          return '<div>' +
+              '<span class="name">' + escape(item.title) + '</span><br>' +
+              '<span class="email">' + escape(item.email) + '</span><br>' +
+              '<span class="nbLivre">Nombre de livre restants : ' + escape(5 - item.nbLivre) + '</span>' +
+          '</div>';
+      }
+    },
+    onChange: function(value) {
+
+      const selectedUser = users.find(user => user.email === value);
+      const livresSelectize = $('#livre')[0].selectize;
+      livresSelectize.settings.maxItems = selectedUser ? 5 - selectedUser.nombreLivresEmpruntes : 5;
+      livresSelectize.refreshOptions();
+      if (value) {
+        livresSelectize.enable(); // Activer le menu déroulant des livres si un utilisateur est sélectionné
+      } else {
+        livresSelectize.disable();
+      }
+    },
+    create: false
+});
+
+
+  document.addEventListener('DOMContentLoaded', async function () {
+    livres = await loadLivres();
+    users = await loadUsers();
+    emprunts = await loadEmprunts();
+    editeurs = await loadEditeurs();
+    auteurs = await loadAuteurs();
+    livres = mettreAJourLivres(livres);
+    console.log(livres)
+    //livres = mettreAJourLivres(livres);
+    
+    const livresSelectize = $('#livre')[0].selectize;
+    livresSelectize.disable();
+
+    livres.forEach((livre) => {
+      const livreId = (livre.titre + '_' + livre.auteur + '_' + livre.editeur).replace(/ /g, "#")
+      const option = {
+        id: livreId,
+        titre: livre.titre,
+        auteur: livre.auteursNoms,
+        editeur: livre.editeurNom,
+        exemplaire: livre.exemplairesDisponibles
+      };
+      if (livre.exemplairesDisponibles === 0) {
+        option.disabled = true; // Griser l'option si le nombre d'exemplaires est égal à 0
+      }
+      livresSelectize.addOption(option);
+    });
+    livresSelectize.refreshOptions();
+    const usersSelectize = $('#user')[0].selectize;
+    users.forEach((user) => {
+        usersSelectize.addOption({
+            id: user.email,
+            title: user.nom + ' ' + user.prenom,
+            email: user.email,
+            nbLivre: user.nombreLivresEmpruntes
+        });
+    });
+    usersSelectize.refreshOptions();
+  });
+
+  function mettreAJourLivres(livres) {
+    livres = livres.map(livre => {
+      const auteursNoms = livre.auteur.map(id => {
+        const auteur = auteurs.find(auteur => auteur._id === id);
+        return auteur ? `${auteur.prenom} ${auteur.nom}` : 'Auteur inconnu';
+      });
+      livre.auteursNoms = auteursNoms.length > 0 ? auteursNoms.join(', ') : 'Auteur inconnu';
+  
+      // Remplacer l'ID de l'éditeur par le nom correspondant
+      const editeur = editeurs.find(editeur => editeur._id === livre.editeur);
+      livre.editeurNom = editeur ? editeur.nom : 'Éditeur inconnu';
+  
+      return livre;
+    });
+    return livres
+  }
+  
+  async function loadAuteurs() {
+    try {
+      const response = await axios.get('/api/data/auteurs');  
+      auteurs = response.data;
+      return auteurs
+    } catch (error) {
+      console.error('Erreur lors de la récupération des données', error);
+    }
+  }
+  
+  async function loadEditeurs() {
+    try {
+      const response = await axios.get('/api/data/editeurs');  
+      editeurs = response.data;
+      return editeurs
+    } catch (error) {
+      console.error('Erreur lors de la récupération des données', error);
+    }
+  }
+
+  async function loadLivres() {
+    try {
+      const response = await axios.get('/api/data/livres');  
+      livres = response.data;
+      return livres
+    } catch (error) {
+      console.error('Erreur lors de la récupération des données', error);
+    }
+}
+
+async function loadUsers() {
+  try {
+    const response = await axios.get('/api/data/users');  
+    users = response.data;
+
+    return users
+  } catch (error) {
+    console.error('Erreur lors de la récupération des données', error);
+  }
+}
+
+async function loadEmprunts() {
+  try {
+    const response = await axios.get('/api/data/emprunts');
+    emprunts = response.data
+    return emprunts
+  } catch (error) {
+    console.error('Erreur lors de la récupération des données', error);
+  }
+}
+
+
+</script>
